@@ -2,23 +2,23 @@ var PLAYERS = [
   {
     id: 1,
     name: "John Hopkins",
-    score: 43
+    score: 53
   },
   {
     id: 2,
     name: "Bruce Smith",
-    score: 48
+    score: 58
   },
   {
     id: 3,
     name: "Linda Afflek",
-    score: 54
+    score: 64
   }
 ];
 
 function Stats(props) {
   var totalPlayers = props.players.length;
-  var totalPoints = props.players.reduce(function(total, player){
+  var totalPoints = props.players.reduce(function (total, player) {
     return total + player.score;
   }, 0);
 
@@ -81,6 +81,8 @@ Counter.propTypes = {
   onChange: React.PropTypes.func.isRequired
 }
 
+
+
 function Player(props) {
   return (
     <li className="list-group-item">
@@ -99,6 +101,27 @@ Player.propTypes = {
   score: React.PropTypes.number.isRequired,
   onScoreChange: React.PropTypes.func.isRequired
 }
+
+var AddPlayer = React.createClass({
+  render: function () {
+    return (
+        <div className="">
+          <form role="form">
+            <div className="row">
+              <div className="col-xs-12">
+                <div className="input-group input-group-md">
+                  <input type="text" className="form-control" placeholder="Add a player here" />
+                  <div className="input-group-btn">
+                    <button type="submit" className="btn">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+    );
+  }
+})
 
 var Application = React.createClass({
   propTypes: {
@@ -128,6 +151,7 @@ var Application = React.createClass({
     this.setState(this.state);
   },
 
+
   render: function () {
     return (
       <div className="application">
@@ -141,7 +165,9 @@ var Application = React.createClass({
               );
             }.bind(this))}
           </ul>
+          <AddPlayer />
         </div>
+        
       </div>
     )
   }
