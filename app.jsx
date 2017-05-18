@@ -23,7 +23,7 @@ function Stats(props) {
   }, 0);
 
   return (
-    <div className="stats col-xs-3">
+    <div className="stats col-sm-3">
       <p className="display text-center">Players : {totalPlayers}</p>
       <p className="display text-center">Total Points : {totalPoints}</p>
     </div>
@@ -34,20 +34,76 @@ Stats.propTypes = {
   players: React.PropTypes.array.isRequired
 }
 
+var Stopwatch = React.createClass({
+  getInitialState: function () {
+    return {
+      running: false,
+      elapsedTime: 0,
+      previousTime: 0,
+    }
+  },
+
+  componentDidMount: function() {
+    this.interval = setInterval(this.onTick, 100);
+  },
+
+  componentWillUnmount: function() {
+    clearInterval(this.interval)
+  },
+
+  onTick: function() {
+    console.log('onTick')
+    if(this.state.running) {
+      var now = Date.now();
+      this.setState({
+        previousTime: now,
+        elapsedTime: this.state.elapsedTime + (now - this.state.previousTime),
+      });
+    }
+  },
+
+  onStart: function() {
+    this.setState({
+      running: true,
+      previousTime: Date.now(),
+    })
+  },
+  onStop: function() {
+    this.setState({running: false})
+  },
+  onReset: function() {
+    this.setState({
+      elapsedTime: 0,
+      previousTime: Date.now(),
+    })
+  },
+
+  render: function () {
+    var seconds = Math.floor(this.state.elapsedTime / 1000);
+
+    return (
+      <div className="col-sm-3">
+        <p className="display text-center">{seconds}</p>
+        <div className="btn-group btn-group-justified center-block" role="group"
+          aria-label="Justified button group">
+          { this.state.running ?
+            <a onClick={this.onStop} className="btn btn-default" role="button">STOP</a>
+            :
+            <a onClick={this.onStart} className="btn btn-default" role="button">START</a> }
+          <a onClick={this.onReset} className="btn btn-default" role="button">RESET</a>
+        </div>
+      </div>
+    )
+  }
+})
+
 function Header(props) {
   return (
     <div className="panel-heading">
       <div className="row">
         <Stats players={props.players} />
-        <div className="title col-xs-6 text-center text-uppercase">{props.title}</div>
-        <div className="col-xs-3">
-          <p className="display text-center">0</p>
-          <div className="btn-group btn-group-justified center-block" role="group"
-            aria-label="Justified button group">
-            <a href="#" className="btn btn-default" role="button">STOP</a>
-            <a href="#" className="btn btn-default" role="button">RESET</a>
-          </div>
-        </div>
+        <div className="title col-sm-6 text-center text-uppercase">{props.title}</div>
+        <Stopwatch />
       </div>
     </div>
   )
@@ -87,7 +143,12 @@ function Player(props) {
   return (
     <li className="list-group-item">
       <div className="row">
-        <div className="title col-xs-8">{props.name}</div> {/*JIM HOSKINS*/}
+        <div className="title col-xs-8">
+          <a className="btn btn-danger btnRemove" onClick={props.onRemove} >
+            <span className="glyphicon glyphicon-remove" aria-hidden="true"></span>
+          </a>
+          {"  "}{props.name}
+        </div> {/*JIM HOSKINS*/}
         <div className="col-xs-4">
           <Counter score={props.score} onChange={props.onScoreChange} />
         </div>
@@ -99,26 +160,53 @@ function Player(props) {
 Player.propTypes = {
   name: React.PropTypes.string.isRequired,
   score: React.PropTypes.number.isRequired,
-  onScoreChange: React.PropTypes.func.isRequired
+  onScoreChange: React.PropTypes.func.isRequired,
+  onRemove: React.PropTypes.func.isRequired,
 }
 
-var AddPlayer = React.createClass({
+var AddPlayerForm = React.createClass({
+  propTypes: {
+    onAdd: React.PropTypes.func.isRequired,
+  },
+
+  getInitialState: function () {
+    return {
+      name: "",
+    };
+  },
+
+  onNameChange: function (e) {
+    console.log('onNamechange', e.target.value);
+    this.setState({
+      name: e.target.value
+    })
+  },
+
+  onSubmit: function (e) {
+    e.preventDefault();
+    this.props.onAdd(this.state.name)
+    this.setState({
+      name: ""
+    })
+  },
+
   render: function () {
     return (
-        <div className="">
-          <form role="form">
-            <div className="row">
-              <div className="col-xs-12">
-                <div className="input-group input-group-md">
-                  <input type="text" className="form-control" placeholder="Add a player here" />
-                  <div className="input-group-btn">
-                    <button type="submit" className="btn">Add</button>
-                  </div>
+      <div className="addPlayer">
+        <form role="form" onSubmit={this.onSubmit} >
+          <div className="row">
+            <div className="col-xs-12">
+              <div className="input-group input-group-lg">
+                <input type="text" className="form-control" value={this.state.name} onChange={this.onNameChange}
+                  placeholder="Add a player here" />
+                <div className="input-group-btn">
+                  <button type="submit" className="btn">Add</button>
                 </div>
               </div>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
+      </div>
     );
   }
 })
@@ -151,6 +239,21 @@ var Application = React.createClass({
     this.setState(this.state);
   },
 
+  onPlayerAdd: function (name) {
+    console.log('onPlayerAdd', name, this.state.players.length + 1);
+    this.state.players.push({
+      name: name,
+      score: 0,
+      id: this.state.players.length + 1
+    })
+    this.setState(this.state)
+  },
+
+  onRemovePlayer: function (index) {
+    console.log('onRemovePlayer', index);
+    this.state.players.splice(index, 1);
+    this.setState(this.state);
+  },
 
   render: function () {
     return (
@@ -161,13 +264,14 @@ var Application = React.createClass({
             {this.state.players.map(function (player, index) {
               return (
                 <Player onScoreChange={function (delta) { this.onScoreChange(index, delta) }.bind(this)}
+                  onRemove={function () { this.onRemovePlayer(index) }.bind(this)}
                   name={player.name} score={player.score} key={player.id} />
               );
             }.bind(this))}
           </ul>
-          <AddPlayer />
+          <AddPlayerForm onAdd={this.onPlayerAdd} />
         </div>
-        
+
       </div>
     )
   }
